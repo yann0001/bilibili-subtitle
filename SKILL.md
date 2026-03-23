@@ -51,7 +51,7 @@ pixi run python -m bilibili_subtitle --check
 ✅ BBDown Auth: Logged in
 ✅ ffmpeg: Installed
 ⚠️  ANTHROPIC_API_KEY: Not set (required for proofreading)
-⚠️  DASHSCOPE_API_KEY: Not set (required for ASR)
+⚠️  DASHSCOPE_API_KEY: Not set (ASR 云端模式需要)
 ✅ Python Dependencies: All installed
 ```
 
@@ -68,7 +68,7 @@ pixi run python -m bilibili_subtitle --check --check-json
 | E002 | FATAL | BBDown 未登录 | `BBDown login` |
 | E003 | RECOVERABLE | 下载失败 | 检查 URL/网络 |
 | E004 | RECOVERABLE | 无字幕 | 自动触发 ASR |
-| E005 | FATAL | ASR 未配置 | 设置 DASHSCOPE_API_KEY |
+| E005 | FATAL | ASR 未配置 | 设置 DASHSCOPE_API_KEY 或安装 `local` 模式依赖 |
 | E006 | RECOVERABLE | AI 功能未配置 | 使用 --skip-* 或设置 API Key |
 | E007 | FATAL | ffmpeg 未安装 | `pixi install` |
 | E008 | FATAL | URL 无效 | 提供正确的 BV/URL |
@@ -142,12 +142,20 @@ output/
 └── {title}.summary.md      # 摘要 Markdown (可选)
 ```
 
+## ASR 模式
+
+| 模式 | 模型 | API 依赖 | 安装 |
+|------|------|----------|------|
+| `qwen`（默认） | qwen3-asr-flash | `DASHSCOPE_API_KEY` | `pip install -e ".[transcribe]"` |
+| `openai` | whisper-1 | `OPENAI_API_KEY` | `pip install -e ".[transcribe]"` |
+| `local` | mlx-community/whisper-large-v3-mlx | 无 | `pip install -e ".[local]"` |
+
 ## API Keys
 
 | Key | Provider | 用途 | 必需性 |
 |-----|----------|------|--------|
 | `ANTHROPIC_API_KEY` | Anthropic | 校对/摘要 | 推荐 |
-| `DASHSCOPE_API_KEY` | 阿里云 | ASR 转录 | 无字幕时必需 |
+| `DASHSCOPE_API_KEY` | 阿里云 | ASR 转录（qwen 模式） | 仅云端模式必需 |
 
 ## 安装
 

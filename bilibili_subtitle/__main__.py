@@ -36,6 +36,30 @@ _WINDOWS_ILLEGAL_RE = re.compile(r'[/\\:*?"<>|]')
 _CONTROL_CHAR_RE = re.compile(r'[\x00-\x1f]')
 
 
+def _make_transcriber():
+    """Create a TranscribeAgent with fallback from qwen -> local -> openai."""
+    from .agents.transcribe_agent import TranscribeAgent
+    import os
+
+    # Try qwen first
+    if os.environ.get("DASHSCOPE_API_KEY"):
+        return TranscribeAgent(mode="qwen")
+
+    # Fallback to local (mlx_whisper)
+    try:
+        import mlx_whisper  # noqa: F401
+        return TranscribeAgent(mode="local")
+    except ImportError:
+        pass
+
+    # Fallback to openai
+    if os.environ.get("OPENAI_API_KEY"):
+        return TranscribeAgent(mode="openai")
+
+    # No ASR backend available
+    raise ASRConfigError()
+
+
 def _sanitize_filename(name: str) -> str:
     """Remove Windows-illegal characters and control chars from a filename."""
     name = _CONTROL_CHAR_RE.sub("", name)
@@ -176,7 +200,7 @@ def run_extraction(
             if verbose:
                 print(f"[INFO] Audio extracted: {audio_path}")
 
-            transcriber = TranscribeAgent(mode="qwen")
+            transcriber = _make_transcriber()
             result = transcriber.transcribe(str(audio_path))
             segments = result.segments
 

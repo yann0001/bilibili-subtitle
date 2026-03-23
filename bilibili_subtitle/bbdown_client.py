@@ -123,7 +123,7 @@ class BBDownClient:
         raise last_exc or BBDownError("BBDown failed after retries")
 
     def get_video_info(
-        self, url: str, work_dir: Path, *, lang: str | None = "zh-Hans"
+        self, url: str, work_dir: Path, *, lang: str | None = "zh"
     ) -> VideoInfo:
         """Download subtitles and return video info (Fix 4, 7)."""
         work_dir.mkdir(parents=True, exist_ok=True)
@@ -135,15 +135,11 @@ class BBDownClient:
 
         args = self._base_args() + [
             "--sub-only",
-            "--skip-ai",
-            "false",
             "-F",
             video_id,
             "--work-dir",
             str(work_dir),
         ]
-        if lang is not None:
-            args += ["--select-lang", lang]
         args.append(url)
 
         result = self._run(args, check=False)

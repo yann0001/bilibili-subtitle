@@ -53,7 +53,7 @@ if [ -z "$SKIP_PYTHON_INSTALL" ]; then
     echo ""
     echo -e "${YELLOW}[3/4] 安装 Python 依赖...${NC}"
     pixi run python -m pip install --upgrade pip -q
-    pixi run python -m pip install -e "$SKILL_DIR[claude,transcribe]" -q
+    pixi run python -m pip install -e "$SKILL_DIR[claude,transcribe,local]" -q
     pixi run python -m pip install dashscope -q
     echo -e "${GREEN}✅ Python 依赖安装完成${NC}"
 else

@@ -10,3 +10,4 @@ output/
 *.egg-info/
 .idea
 DS_STORE
+/qrcode.png

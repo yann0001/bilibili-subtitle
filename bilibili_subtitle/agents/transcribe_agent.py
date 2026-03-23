@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from ..segment import Segment
 
-Mode = Literal["noop", "openai", "qwen"]
+Mode = Literal["noop", "openai", "qwen", "local"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,16 +25,20 @@ class TranscribeAgent:
         mode: Mode = "qwen",
         model: str = "qwen3-asr-flash",
         api_key: str | None = None,
+        local_model: str = "mlx-community/whisper-large-v3-mlx",
     ) -> None:
         self._mode = mode
         self._model = model
         self._api_key = api_key
+        self._local_model = local_model
 
     def transcribe(self, audio_path: str) -> TranscribeResult:
         if self._mode == "noop":
             return TranscribeResult(segments=[], raw=None)
         elif self._mode == "qwen":
             return self._transcribe_qwen(audio_path)
+        elif self._mode == "local":
+            return self._transcribe_local(audio_path)
         else:
             return self._transcribe_openai(audio_path)
 
@@ -135,3 +139,40 @@ class TranscribeAgent:
             ))
 
         return TranscribeResult(segments=segments, raw=resp)
+
+    def _transcribe_local(self, audio_path: str) -> TranscribeResult:
+        """Transcribe using local MLX Whisper model (Apple Silicon optimized)."""
+        # Convert to wav if needed (mlx_whisper expects audio file)
+        wav_path = self._ensure_wav(audio_path)
+
+        try:
+            from mlx_whisper import transcribe
+
+            result = transcribe(
+                audio=wav_path,
+                path_or_hf_repo=self._local_model,
+                language="zh",
+                word_timestamps=True,
+                temperature=0.0,
+                condition_on_previous_text=True,
+                compression_ratio_threshold=2.4,
+                hallucination_silence_threshold=2.0,
+            )
+        finally:
+            if wav_path != audio_path and Path(wav_path).exists():
+                Path(wav_path).unlink()
+
+        segments: list[Segment] = []
+        for seg in result.get("segments", []):
+            start_s = seg.get("start")
+            end_s = seg.get("end")
+            text = seg.get("text", "") or ""
+            if start_s is None or end_s is None:
+                continue
+            segments.append(Segment(
+                start_ms=int(round(float(start_s) * 1000)),
+                end_ms=int(round(float(end_s) * 1000)),
+                text=" ".join(str(text).split()),
+            ))
+
+        return TranscribeResult(segments=segments, raw=result)

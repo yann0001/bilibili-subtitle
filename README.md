@@ -6,7 +6,6 @@ Bilibili 字幕提取 Skill，支持：
 - 无字幕时自动走音频下载 + ASR 转录
 - 输出 SRT / VTT / Markdown transcript / 结构化摘要
 
-该仓库可独立使用，也可作为上层编排器（如 `anything-to-notebooklm`）的子 Skill。
 
 ## Quick Start
 
@@ -37,18 +36,27 @@ pixi run python -m bilibili_subtitle "BV1xx411c7mD" --skip-proofread --skip-summ
 
 ## 依赖说明
 
-| 依赖 | 用途 | 是否必须 |
-|---|---|---|
-| pixi | 固定 Python/工具环境 | 是 |
-| BBDown | B站元信息/字幕/音频抓取 | 是 |
-| ffmpeg | 音频格式转换（ASR 路径） | 是 |
-| `DASHSCOPE_API_KEY` | 无字幕视频时的 ASR | 条件必须 |
-| `ANTHROPIC_API_KEY` | 校对与摘要 | 可选 |
+
+| 依赖                  | 用途             | 是否必须 |
+| ------------------- | -------------- | ---- |
+| pixi                | 固定 Python/工具环境 | 是    |
+| BBDown              | B站元信息/字幕/音频抓取  | 是    |
+| ffmpeg              | 音频格式转换（ASR 路径） | 是    |
+| `ANTHROPIC_API_KEY` | 校对与摘要          | 可选   |
+
+ASR 转录有三种模式：
+
+| 模式 | 说明 | 安装方式 |
+|------|------|----------|
+| `qwen`（默认） | 阿里云 DashScope 云端 ASR，`qwen3-asr-flash` 模型 | `pip install -e ".[transcribe]"` |
+| `openai` | OpenAI Whisper 云端 API | `pip install -e ".[transcribe]"` |
+| `local` | Apple Silicon 本地 MLX Whisper，无需网络 | `pip install -e ".[local]"` |
 
 说明：
 
 - 如果不需要 LLM 校对/摘要，可加 `--skip-proofread --skip-summary`
-- 如果视频本身有字幕，可不配置 `DASHSCOPE_API_KEY`
+- 如果视频本身有字幕，可不配置任何 ASR 密钥
+- `local` 模式默认使用 `mlx-community/whisper-large-v3-mlx` 模型，首次运行自动下载
 
 ## CLI 用法
 
@@ -92,8 +100,8 @@ pixi run python -m bilibili_subtitle "URL_OR_BVID" [options]
 - `command not found: BBDown`
   - 重新执行 `./install.sh`
   - 或手动安装：`https://github.com/nilaoda/BBDown/releases`
-- `Missing DASHSCOPE_API_KEY`
-  - 仅在无字幕视频且需要转录时出现
+- `Missing DASHSCOPE_API_KEY` / `Missing OPENAI_API_KEY`
+  - 仅在无字幕视频且需要转录时出现；可改用 `local` 模式（无需任何密钥）
 - `Missing ANTHROPIC_API_KEY`
   - 设置 Key，或使用 `--skip-proofread --skip-summary`
 
